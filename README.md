@@ -1,5 +1,11 @@
 ## Payment_system
 
+# Технологии:
+
+* DRF
+* Celery
+* PostgreSQL
+
 # Установка и запуск
 
 
