@@ -28,7 +28,7 @@ class PaymentProgress(models.Model):
     month = models.PositiveIntegerField(verbose_name='Месяц',
                                         choices=[(i, i) for i in range(1, 13)])
     year = models.PositiveIntegerField(verbose_name='Год')
-    result = models.CharFiel(null=True, blank=True)
+    result = models.CharField(null=True, blank=True)
     status = models.CharField(max_length=20,
                               choices=STATUS_CHOICES,
                               default='PENDING'
