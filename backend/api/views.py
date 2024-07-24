@@ -41,9 +41,9 @@ class HomeDetailView(APIView):
 
     '''
 
-    def get(self, request, pk=None):
-        home_number = request.query_params.get('home_number')
-        street_name = request.query_params.get('street_name')
+    def get(self, request):
+        home_number = request.data.get('home_number')
+        street_name = request.data.get('street_name')
 
         if not home_number or not street_name:
             return Response({'error':
@@ -65,8 +65,8 @@ class HomeDetailView(APIView):
         return Response(serializer.data)
 
     def put(self, request):
-        home_number = request.query_params.get('home_number')
-        street_name = request.query_params.get('street_name')
+        home_number = request.data.get('home_number')
+        street_name = request.data.get('street_name')
         if not home_number or not street_name:
             return Response({'error':
                              'Необходимы параметры:home_number и street_name'},
@@ -164,10 +164,10 @@ class WaterCheckerDetailView(APIView):
     '''
 
     def get(self, request):
-        home_number = request.query_params.get('home')
-        flat_numbers = request.query_params.get('flats')
-        year = request.query_params.get('year')
-        month = request.query_params.get('month')
+        home_number = request.data.get('home')
+        flat_numbers = request.data.get('flats')
+        year = request.data.get('year')
+        month = request.data.get('month')
 
         filters = {}
 

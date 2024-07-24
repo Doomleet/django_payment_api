@@ -1,9 +1,13 @@
 from pathlib import Path
+import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-r_6q@95!-3r$=a$x&jo&lfe_6kds^g1qv$p*p2x0gyp(u)cnm('
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = True
 
@@ -24,6 +28,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -31,6 +36,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ROOT_URLCONF = 'payment_system.urls'
 
@@ -55,11 +62,11 @@ WSGI_APPLICATION = 'payment_system.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'homedb',
-        'USER': 'postgres',
-        'PASSWORD': 'qasaq123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'django'),
+        'USER': os.getenv('DB_USERNAME', 'django'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT')
     }
 }
 
@@ -86,13 +93,19 @@ USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+if os.getenv('DOCKER'):
+    CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL_DOCKER')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND_DOCKER')
+else:
+    CELERY_BROKER_URL = os.getenv('CELERY_RESULT_BACKEND_LOCAL')
+    CELERY_RESULT_BACKEND = os.getenv('CELERY_BROKER_URL_LOCAL')
+
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

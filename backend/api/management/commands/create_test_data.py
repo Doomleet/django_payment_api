@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from home.models import Home, WaterChecker, Flat, Street
+from payment.models import Rate
 import random
 
 START_HOME_NUM = 1
@@ -11,6 +12,12 @@ HOME_3_FLATS = [x + 20 for x in HOME_1_FLATS]
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        rates = [
+            {'rate_type': 'water', 'rate': 3},
+            {'rate_type': 'maintenance', 'rate': 5},
+        ]
+        for rate_data in rates:
+            Rate.objects.create(**rate_data)
         street1 = Street.objects.create(street_name='Первая улица')
         street2 = Street.objects.create(street_name='Вторая улица')
         homes = []
@@ -32,7 +39,7 @@ class Command(BaseCommand):
             for flat_number in flats:
                 flat = Flat.objects.create(
                     flat_number=flat_number,
-                    flat_size=random.uniform(30.0, 100.0)
+                    flat_size=round(random.uniform(30.0, 100.0), 1)
                 )
                 home.flats.add(flat)
 
@@ -42,12 +49,12 @@ class Command(BaseCommand):
                 num_checkers = random.randint(1, 3)
                 for _ in range(num_checkers):
                     prev_water_amount = 0
-                    for month in range(1, 13):
-                        for year in range(2022, 2024):
+                    for year in range(2022, 2024):
+                        for month in range(1, 13):
                             if month == 1 and year == 2022:
-                                current_water_amount = random.uniform(100.0, 1000.0)
+                                current_water_amount = round(random.uniform(100.0, 1000.0), 1)
                             else:
-                                current_water_amount = prev_water_amount + random.uniform(100.0, 1000.0)
+                                current_water_amount = prev_water_amount + round(random.uniform(100.0, 1000.0), 1)
 
                             WaterChecker.objects.create(
                                 home=home,

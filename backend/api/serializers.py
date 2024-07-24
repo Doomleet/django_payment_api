@@ -48,14 +48,33 @@ class HomeSerializer(serializers.ModelSerializer):
         fields = ['house_number', 'street', 'flats']
 
 
+class HomeLocationSerializer(serializers.ModelSerializer):
+    street = StreetSerializer()
+
+    class Meta:
+        model = Home
+        fields = ['house_number', 'street']
+
+
 class FlatCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flat
         fields = ['flat_number', 'flat_size']
 
 
+class StreetСreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Street
+        fields = ['street_name']
+
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            return {'street_name': data}
+        return super().to_internal_value(data)
+
+
 class HomeCreateUpdateSerializer(serializers.ModelSerializer):
-    street = StreetSerializer(required=False, allow_null=True)
+    street = StreetСreateSerializer(required=False, allow_null=True)
     flats = FlatCreateSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
@@ -66,16 +85,27 @@ class HomeCreateUpdateSerializer(serializers.ModelSerializer):
         street_data = validated_data.pop('street', None)
         flats_data = validated_data.pop('flats', [])
 
-        home = Home.objects.create(**validated_data)
-
         if street_data:
             street, _ = Street.objects.get_or_create(**street_data)
-            home.street = street
+        home, created = Home.objects.get_or_create(
+            house_number=validated_data['house_number'],
+            street=street, defaults=validated_data
+        )
+        if not created:
+            for attr, value in validated_data.items():
+                setattr(home, attr, value)
             home.save()
-
         for flat_data in flats_data:
-            flat, _ = Flat.objects.get_or_create(**flat_data)
+            flat, created = Flat.objects.get_or_create(
+                flat_number=flat_data['flat_number'],
+                defaults=flat_data
+            )
+            if not created:
+                flat.flat_size = flat_data['flat_size']
+                flat.save()
             home.flats.add(flat)
+        sorted_flats = sorted(home.flats.all(), key=lambda x: x.flat_number)
+        home.flats.set(sorted_flats)
 
         return home
 
@@ -90,13 +120,19 @@ class HomeCreateUpdateSerializer(serializers.ModelSerializer):
             street, _ = Street.objects.get_or_create(**street_data)
             instance.street = street
             instance.save()
-        existing_flats = set(instance.flats.all())
-        new_flats = set()
-
+        existing_flats = {
+            flat.flat_number: flat for flat in instance.flats.all()
+        }
+        new_flats = []
         for flat_data in flats_data:
-            flat, _ = Flat.objects.get_or_create(**flat_data)
-            new_flats.add(flat)
-        for flat in new_flats:
-            if flat not in existing_flats:
-                instance.flats.add(flat)
+            flat_number = flat_data.get('flat_number')
+            if flat_number in existing_flats:
+                flat = existing_flats[flat_number]
+                flat.flat_size = flat_data.get('flat_size', flat.flat_size)
+                flat.save()
+            else:
+                new_flat = Flat.objects.create(**flat_data)
+                new_flats.append(new_flat)
+
+        instance.flats.add(*new_flats)
         return instance
